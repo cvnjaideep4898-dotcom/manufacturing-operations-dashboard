@@ -1,25 +1,30 @@
-# Manufacturing Operations Analytics Dashboard
+# Manufacturing Operations Dashboard
 
-A full-stack manufacturing analytics application designed to monitor production performance, equipment health, operational efficiency, and equipment alerts.
+A full-stack manufacturing analytics dashboard designed to monitor production performance, equipment health, operational efficiency, and manufacturing alerts.
 
-The project demonstrates how operational manufacturing data can be stored in PostgreSQL, exposed through REST APIs, and visualized through an interactive React dashboard.
+The application uses a React + TypeScript frontend, an Express.js REST API, and PostgreSQL for persistent manufacturing data storage.
+
+![Manufacturing Operations Dashboard](screenshots/dashboard.png)
 
 ## Features
 
-- Manufacturing KPI monitoring
-- Equipment status tracking
+- Real-time-style manufacturing operations dashboard
+- Equipment status monitoring
 - Production output visualization
-- Equipment temperature and vibration monitoring
-- Operational alert tracking
+- Machine temperature and vibration monitoring
+- Equipment efficiency tracking
+- Operational alert monitoring
 - Machine status filtering
 - Shift selection
+- Dynamic KPI calculations
 - REST API integration
-- PostgreSQL-backed operational data
-- Responsive analytics dashboard
+- PostgreSQL database integration
+- Responsive dashboard interface
 
 ## Technology Stack
 
 ### Frontend
+
 - React
 - TypeScript
 - Vite
@@ -27,159 +32,264 @@ The project demonstrates how operational manufacturing data can be stored in Pos
 - CSS
 
 ### Backend
+
 - Node.js
 - Express.js
-- REST APIs
+- REST API
 - CORS
+- PostgreSQL `pg` client
 
 ### Database
-- PostgreSQL
-- SQL
 
-### DevOps
+- PostgreSQL
 - Docker
+
+### Development Tools
+
 - Git
 - GitHub
+- VS Code
+- Chrome DevTools
+- Docker Desktop
 
 ## System Architecture
 
+```text
+React + TypeScript Frontend
+          |
+          | HTTP / REST API
+          v
+Node.js + Express Backend
+          |
+          | SQL Queries
+          v
+PostgreSQL Database
+          |
+          v
 Manufacturing Data
-        |
-        v
-   PostgreSQL
-        |
-        v
-Node.js / Express API
-        |
-        v
-     REST APIs
-        |
-        v
-React + TypeScript
-        |
-        v
-Analytics Dashboard
+```
 
-## API Endpoints
+The frontend retrieves manufacturing information from the Express API.
 
-### Health Check
+The Express backend communicates with PostgreSQL and exposes data through REST API endpoints.
 
-GET /api/health
+## Dashboard KPIs
 
-Verifies that the API and PostgreSQL database are available.
+The dashboard provides several manufacturing KPIs:
 
-### Equipment Data
+- Production Output
+- Equipment Online
+- Active Alerts
+- Overall Equipment Efficiency
 
+These metrics are calculated using production and equipment data retrieved by the application.
+
+## Equipment Monitoring
+
+The equipment table provides operational information for each machine, including:
+
+| Metric | Description |
+|---|---|
+| Machine | Equipment identifier |
+| Status | Running, Warning, or Offline |
+| Temperature | Current operating temperature |
+| Vibration | Machine vibration measurement |
+| Efficiency | Current machine efficiency |
+
+Status indicators make it easy to identify machines requiring attention.
+
+## Production Performance
+
+Production output is visualized using an interactive Recharts line chart.
+
+The chart displays hourly production output and helps identify:
+
+- Production trends
+- Output changes
+- Performance fluctuations
+- Shift-level manufacturing performance
+
+## Operational Alerts
+
+The dashboard displays manufacturing alerts such as:
+
+- High machine temperature
+- Excessive vibration
+- Equipment offline conditions
+
+Alerts are categorized by severity to help identify equipment requiring immediate attention.
+
+## REST API
+
+The Express backend exposes REST API endpoints used by the frontend.
+
+```text
 GET /api/machines
-
-Returns machine status, temperature, vibration, and efficiency information.
-
-### Production Data
-
 GET /api/production
-
-Returns hourly manufacturing production output.
-
-### Operational Alerts
-
 GET /api/alerts
+GET /api/health
+```
 
-Returns recent manufacturing alerts and severity levels.
+### Example Machine Response
 
-## Database
+```json
+{
+  "name": "Machine 01",
+  "status": "Running",
+  "temperature": 72,
+  "vibration": 2.1,
+  "efficiency": 96
+}
+```
 
-The PostgreSQL database contains three primary datasets:
+## PostgreSQL Database
 
-### machines
+Manufacturing equipment data is stored in PostgreSQL.
 
-Stores:
+Example table structure:
 
-- Machine name
-- Operating status
-- Temperature
-- Vibration
-- Efficiency
+```sql
+CREATE TABLE machines (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    temperature DECIMAL(5,2),
+    vibration DECIMAL(5,2),
+    efficiency DECIMAL(5,2) NOT NULL
+);
+```
 
-### production_data
+Example data:
 
-Stores:
+```sql
+INSERT INTO machines
+(name, status, temperature, vibration, efficiency)
+VALUES
+('Machine 01', 'Running', 72, 2.1, 96),
+('Machine 02', 'Running', 69, 1.8, 94),
+('Machine 03', 'Warning', 91, 4.7, 82),
+('Machine 04', 'Offline', NULL, NULL, 0);
+```
 
-- Production time
-- Production output
+## Running the Project Locally
 
-### alerts
+### 1. Clone the repository
 
-Stores:
+```bash
+git clone <your-repository-url>
+cd manufacturing-operations-dashboard
+```
 
-- Alert title
-- Alert message
-- Severity
+### 2. Install frontend dependencies
 
-## Dashboard
+```bash
+npm install
+```
 
-The dashboard provides:
+### 3. Start the frontend
 
-- Production Output KPI
-- Equipment Online KPI
-- Active Alerts KPI
-- Overall Efficiency KPI
-- Equipment Status Table
-- Production Performance Chart
-- Recent Operational Alerts
-- Machine Status Filters
-- Shift Filters
+```bash
+npm run dev
+```
 
-## Business Use Case
+The frontend runs on:
 
-Manufacturing operations teams need visibility into equipment performance and production conditions.
+```text
+http://localhost:5173
+```
 
-This dashboard provides a centralized analytics interface that allows operations teams to:
+### 4. Install backend dependencies
 
-- Identify equipment requiring attention
-- Monitor production trends
-- Track equipment availability
-- Review operational alerts
-- Analyze equipment efficiency
-- Reduce manual operational reporting
+Open another terminal:
+
+```bash
+cd backend
+npm install
+```
+
+### 5. Start the backend
+
+```bash
+node server.js
+```
+
+The backend runs on:
+
+```text
+http://localhost:3001
+```
+
+### 6. Verify the API
+
+Test:
+
+```text
+http://localhost:3001/api/health
+```
+
+You should receive a response indicating that the Manufacturing API is running.
 
 ## Project Structure
 
+```text
 manufacturing-operations-dashboard/
+│
+├── backend/
+│   ├── server.js
+│   ├── package.json
+│   └── package-lock.json
+│
+├── public/
+│
+├── screenshots/
+│   └── dashboard.png
+│
 ├── src/
 │   ├── App.tsx
 │   ├── App.css
 │   └── main.tsx
-├── backend/
-│   ├── server.js
-│   ├── package.json
-│   └── node_modules/
-├── public/
+│
+├── .gitignore
 ├── package.json
-└── README.md
+├── package-lock.json
+├── README.md
+├── tsconfig.json
+└── vite.config.ts
+```
 
-## Running the Application
+## Future Improvements
 
-### Backend
+Potential improvements include:
 
-cd backend
-npm install
-node server.js
+- Real-time machine telemetry using WebSockets
+- Historical production analytics
+- Predictive maintenance models
+- Machine downtime analysis
+- OEE calculations
+- Additional manufacturing KPIs
+- User authentication
+- Role-based dashboard access
+- Cloud deployment
+- Automated CI/CD pipeline
 
-Backend runs on port 3001.
+## Purpose
 
-### Frontend
+This project demonstrates practical full-stack development and data engineering concepts including:
 
-From the project root:
-
-npm install
-npm run dev
-
-The frontend runs using the Vite development server.
+- React dashboard development
+- TypeScript
+- REST API development
+- Node.js and Express
+- PostgreSQL
+- SQL
+- Docker
+- Data visualization
+- API integration
+- Git and GitHub workflow
+- Manufacturing analytics
 
 ## Author
 
-Jaideep
+**Jaideep**
 
-## Project Purpose
-
-Built as a portfolio project demonstrating full-stack analytics development, data visualization, SQL/database integration, REST API development, and modern web technologies.
+Full-Stack / Data / AI-ML Engineering Portfolio Project
