@@ -13,11 +13,7 @@ const PORT = process.env.PORT || 3001
 // -------------------------
 
 const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: Number(process.env.DB_PORT) || 5432,
+  connectionString: process.env.DATABASE_URL,
 })
 
 // -------------------------
@@ -85,8 +81,7 @@ app.get('/', (req, res) => {
 
 app.get('/api/machines', async (req, res) => {
   try {
-    const result = await pool.query(
-      `
+    const result = await pool.query(`
       SELECT
         name,
         status,
@@ -95,19 +90,21 @@ app.get('/api/machines', async (req, res) => {
         efficiency
       FROM machines
       ORDER BY id
-      `
-    )
+    `)
 
     const machines = result.rows.map((machine) => ({
       ...machine,
+
       temperature:
         machine.temperature !== null
           ? Number(machine.temperature)
           : null,
+
       vibration:
         machine.vibration !== null
           ? Number(machine.vibration)
           : null,
+
       efficiency: Number(machine.efficiency),
     }))
 
@@ -165,6 +162,6 @@ app.get('/api/health', async (req, res) => {
 // Start Server
 // -------------------------
 
-app.listen(PORT, () => {
-  console.log(`Backend running at http://localhost:${PORT}`)
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Backend running on port ${PORT}`)
 })
