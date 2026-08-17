@@ -1,27 +1,92 @@
+require('dotenv').config()
+
 const express = require('express')
 const cors = require('cors')
 const { Pool } = require('pg')
 
 const app = express()
-const PORT = 3001
 
-// PostgreSQL connection
+const PORT = process.env.PORT || 3001
+
+// -------------------------
+// PostgreSQL Connection
+// -------------------------
+
 const pool = new Pool({
-  user: 'admin',
-  host: 'localhost',
-  database: 'manufacturing',
-  password: 'admin123',
-  port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: Number(process.env.DB_PORT) || 5432,
 })
 
+// -------------------------
 // Middleware
+// -------------------------
+
 app.use(cors())
 app.use(express.json())
 
-// Get machines from PostgreSQL
+// -------------------------
+// Production Data
+// -------------------------
+
+const productionData = [
+  { time: '8 AM', output: 820 },
+  { time: '9 AM', output: 940 },
+  { time: '10 AM', output: 1050 },
+  { time: '11 AM', output: 1120 },
+  { time: '12 PM', output: 1080 },
+  { time: '1 PM', output: 1190 },
+  { time: '2 PM', output: 1260 },
+  { time: '3 PM', output: 1210 },
+  { time: '4 PM', output: 1320 },
+]
+
+// -------------------------
+// Alert Data
+// -------------------------
+
+const alerts = [
+  {
+    id: 1,
+    title: 'High Temperature',
+    message: 'Machine 03 temperature reached 91°C.',
+    severity: 'Critical',
+  },
+  {
+    id: 2,
+    title: 'High Vibration',
+    message: 'Machine 07 vibration exceeded the normal operating range.',
+    severity: 'Warning',
+  },
+  {
+    id: 3,
+    title: 'Equipment Offline',
+    message: 'Machine 04 is currently unavailable.',
+    severity: 'Offline',
+  },
+]
+
+// -------------------------
+// Root Route
+// -------------------------
+
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Manufacturing Operations API',
+    status: 'running',
+  })
+})
+
+// -------------------------
+// Machine API - PostgreSQL
+// -------------------------
+
 app.get('/api/machines', async (req, res) => {
   try {
-    const result = await pool.query(`
+    const result = await pool.query(
+      `
       SELECT
         name,
         status,
@@ -30,70 +95,59 @@ app.get('/api/machines', async (req, res) => {
         efficiency
       FROM machines
       ORDER BY id
-    `)
+      `
+    )
 
-    res.json(result.rows)
+    const machines = result.rows.map((machine) => ({
+      ...machine,
+      temperature:
+        machine.temperature !== null
+          ? Number(machine.temperature)
+          : null,
+      vibration:
+        machine.vibration !== null
+          ? Number(machine.vibration)
+          : null,
+      efficiency: Number(machine.efficiency),
+    }))
+
+    res.json(machines)
   } catch (error) {
     console.error('Database error:', error)
 
     res.status(500).json({
-      error: 'Unable to retrieve machine data',
+      error: 'Unable to load machine data',
     })
   }
 })
 
-// Get production data from PostgreSQL
-app.get('/api/production', async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT
-        time_label AS time,
-        output
-      FROM production_data
-      ORDER BY id
-    `)
+// -------------------------
+// Production API
+// -------------------------
 
-    res.json(result.rows)
-  } catch (error) {
-    console.error('Database error:', error)
-
-    res.status(500).json({
-      error: 'Unable to retrieve production data',
-    })
-  }
+app.get('/api/production', (req, res) => {
+  res.json(productionData)
 })
 
-// Get alerts from PostgreSQL
-app.get('/api/alerts', async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT
-        id,
-        title,
-        message,
-        severity
-      FROM alerts
-      ORDER BY id
-    `)
+// -------------------------
+// Alerts API
+// -------------------------
 
-    res.json(result.rows)
-  } catch (error) {
-    console.error('Database error:', error)
-
-    res.status(500).json({
-      error: 'Unable to retrieve alert data',
-    })
-  }
+app.get('/api/alerts', (req, res) => {
+  res.json(alerts)
 })
 
-// Health check
+// -------------------------
+// Health API
+// -------------------------
+
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1')
 
     res.json({
       status: 'ok',
-      message: 'Manufacturing API and PostgreSQL are running',
+      message: 'Manufacturing API is running',
       database: 'connected',
     })
   } catch (error) {
@@ -101,13 +155,16 @@ app.get('/api/health', async (req, res) => {
 
     res.status(500).json({
       status: 'error',
-      message: 'PostgreSQL connection failed',
+      message: 'Database connection failed',
       database: 'disconnected',
     })
   }
 })
 
-// Start server
+// -------------------------
+// Start Server
+// -------------------------
+
 app.listen(PORT, () => {
   console.log(`Backend running at http://localhost:${PORT}`)
 })
