@@ -24,23 +24,8 @@ app.use(cors())
 app.use(express.json())
 
 // -------------------------
-// Production Data
-// -------------------------
-
-const productionData = [
-  { time: '8 AM', output: 820 },
-  { time: '9 AM', output: 940 },
-  { time: '10 AM', output: 1050 },
-  { time: '11 AM', output: 1120 },
-  { time: '12 PM', output: 1080 },
-  { time: '1 PM', output: 1190 },
-  { time: '2 PM', output: 1260 },
-  { time: '3 PM', output: 1210 },
-  { time: '4 PM', output: 1320 },
-]
-
-// -------------------------
 // Alert Data
+// Temporary hard-coded data
 // -------------------------
 
 const alerts = [
@@ -110,7 +95,7 @@ app.get('/api/machines', async (req, res) => {
 
     res.json(machines)
   } catch (error) {
-    console.error('Database error:', error)
+    console.error('Machine database error:', error)
 
     res.status(500).json({
       error: 'Unable to load machine data',
@@ -119,15 +104,37 @@ app.get('/api/machines', async (req, res) => {
 })
 
 // -------------------------
-// Production API
+// Production API - PostgreSQL
 // -------------------------
 
-app.get('/api/production', (req, res) => {
-  res.json(productionData)
+app.get('/api/production', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        time_label AS time,
+        output
+      FROM production_data
+      ORDER BY id
+    `)
+
+    const productionData = result.rows.map((point) => ({
+      time: point.time,
+      output: Number(point.output),
+    }))
+
+    res.json(productionData)
+  } catch (error) {
+    console.error('Production database error:', error)
+
+    res.status(500).json({
+      error: 'Unable to load production data',
+    })
+  }
 })
 
 // -------------------------
 // Alerts API
+// Temporary hard-coded data
 // -------------------------
 
 app.get('/api/alerts', (req, res) => {
