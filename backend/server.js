@@ -24,32 +24,6 @@ app.use(cors())
 app.use(express.json())
 
 // -------------------------
-// Alert Data
-// Temporary hard-coded data
-// -------------------------
-
-const alerts = [
-  {
-    id: 1,
-    title: 'High Temperature',
-    message: 'Machine 03 temperature reached 91°C.',
-    severity: 'Critical',
-  },
-  {
-    id: 2,
-    title: 'High Vibration',
-    message: 'Machine 07 vibration exceeded the normal operating range.',
-    severity: 'Warning',
-  },
-  {
-    id: 3,
-    title: 'Equipment Offline',
-    message: 'Machine 04 is currently unavailable.',
-    severity: 'Offline',
-  },
-]
-
-// -------------------------
 // Root Route
 // -------------------------
 
@@ -79,23 +53,20 @@ app.get('/api/machines', async (req, res) => {
 
     const machines = result.rows.map((machine) => ({
       ...machine,
-
       temperature:
         machine.temperature !== null
           ? Number(machine.temperature)
           : null,
-
       vibration:
         machine.vibration !== null
           ? Number(machine.vibration)
           : null,
-
       efficiency: Number(machine.efficiency),
     }))
 
     res.json(machines)
   } catch (error) {
-    console.error('Machine database error:', error)
+    console.error('Machines database error:', error)
 
     res.status(500).json({
       error: 'Unable to load machine data',
@@ -111,15 +82,15 @@ app.get('/api/production', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT
-        time_label AS time,
+        time_label,
         output
       FROM production_data
       ORDER BY id
     `)
 
-    const productionData = result.rows.map((point) => ({
-      time: point.time,
-      output: Number(point.output),
+    const productionData = result.rows.map((row) => ({
+      time: row.time_label,
+      output: Number(row.output),
     }))
 
     res.json(productionData)
@@ -133,12 +104,29 @@ app.get('/api/production', async (req, res) => {
 })
 
 // -------------------------
-// Alerts API
-// Temporary hard-coded data
+// Alerts API - PostgreSQL
 // -------------------------
 
-app.get('/api/alerts', (req, res) => {
-  res.json(alerts)
+app.get('/api/alerts', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        id,
+        title,
+        message,
+        severity
+      FROM alerts
+      ORDER BY id
+    `)
+
+    res.json(result.rows)
+  } catch (error) {
+    console.error('Alerts database error:', error)
+
+    res.status(500).json({
+      error: 'Unable to load alerts',
+    })
+  }
 })
 
 // -------------------------
